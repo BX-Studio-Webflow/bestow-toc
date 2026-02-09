@@ -1,1 +1,140 @@
-"use strict";(()=>{var l=Object.defineProperty;var m=(o,t,e)=>t in o?l(o,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):o[t]=e;var a=(o,t,e)=>m(o,typeof t!="symbol"?t+"":t,e);var c=class{constructor(){a(this,"accordions",[]);a(this,"state",{currentIndex:0,intervalId:null,animationFrameId:null});a(this,"TAB_DURATION",1e4);a(this,"progressStartTime",0)}init(){let t=document.querySelectorAll('[dev-target="accordion"]');if(!t||t.length===0){console.error('No accordion elements found with [dev-target="accordion"]');return}if(t.forEach((e,i)=>{if(!(e instanceof HTMLElement)){console.error(`Accordion at index ${i} is not an HTMLElement`);return}let r=e.querySelector('[dev-target="accordion-title"]'),s=e.querySelector('[dev-target="accordion-message"]'),n=e.querySelector('[dev-target="accordion-animation-track"]'),d=e.querySelector('[dev-target="accordion-animation-fill"]');if(!r){console.error(`Accordion at index ${i} is missing [dev-target="accordion-title"]`);return}if(!s){console.error(`Accordion at index ${i} is missing [dev-target="accordion-message"]`);return}if(!n){console.error(`Accordion at index ${i} is missing [dev-target="accordion-animation-track"]`);return}if(!d){console.error(`Accordion at index ${i} is missing [dev-target="accordion-animation-fill"]`);return}e.addEventListener("click",()=>{this.goToAccordion(i)}),this.accordions.push(e)}),this.accordions.length===0){console.error("No valid accordions found after validation");return}this.activateAccordion(0),this.startAutoCycle()}activateAccordion(t){this.accordions.forEach(i=>{let r=i.querySelector('[dev-target="accordion-animation-fill"]');r&&(r.style.width="0%"),i.classList.remove("is-active")}),this.accordions[t].classList.add("is-active"),this.state.currentIndex=t,this.startProgressAnimation()}startProgressAnimation(){this.state.animationFrameId!==null&&cancelAnimationFrame(this.state.animationFrameId);let e=this.accordions[this.state.currentIndex].querySelector('[dev-target="accordion-animation-fill"]');if(!e)return;this.progressStartTime=performance.now();let i=r=>{let s=r-this.progressStartTime,n=Math.min(s/this.TAB_DURATION,1),d=n*100;e.style.width=`${d}%`,n<1&&(this.state.animationFrameId=requestAnimationFrame(i))};this.state.animationFrameId=requestAnimationFrame(i)}startAutoCycle(){this.state.intervalId=window.setInterval(()=>{let t=(this.state.currentIndex+1)%this.accordions.length;this.activateAccordion(t)},this.TAB_DURATION)}stop(){this.state.intervalId!==null&&(clearInterval(this.state.intervalId),this.state.intervalId=null),this.state.animationFrameId!==null&&(cancelAnimationFrame(this.state.animationFrameId),this.state.animationFrameId=null)}goToAccordion(t){if(t<0||t>=this.accordions.length){console.error(`Invalid accordion index: ${t}`);return}this.state.intervalId!==null&&clearInterval(this.state.intervalId),this.activateAccordion(t),this.startAutoCycle()}destroy(){this.stop(),this.accordions=[],this.state={currentIndex:0,intervalId:null,animationFrameId:null}}};window.Webflow||(window.Webflow=[]);window.Webflow.push(()=>{new c().init()});})();
+"use strict";
+(() => {
+  // bin/live-reload.js
+  new EventSource(`${"http://localhost:3000"}/esbuild`).addEventListener("change", () => location.reload());
+
+  // src/utils/accordion-animation.ts
+  var AccordionController = class {
+    accordions = [];
+    state = {
+      currentIndex: 0,
+      intervalId: null
+    };
+    TAB_DURATION = 1e4;
+    // 10 seconds in milliseconds
+    /**
+     * Initialize the accordion controller
+     */
+    init() {
+      const accordionElements = document.querySelectorAll('[dev-target="accordion"]');
+      if (!accordionElements || accordionElements.length === 0) {
+        console.error('No accordion elements found with [dev-target="accordion"]');
+        return;
+      }
+      accordionElements.forEach((accordion, index) => {
+        if (!(accordion instanceof HTMLElement)) {
+          console.error(`Accordion at index ${index} is not an HTMLElement`);
+          return;
+        }
+        const title = accordion.querySelector('[dev-target="accordion-title"]');
+        const message = accordion.querySelector('[dev-target="accordion-message"]');
+        if (!title) {
+          console.error(`Accordion at index ${index} is missing [dev-target="accordion-title"]`);
+          return;
+        }
+        if (!message) {
+          console.error(`Accordion at index ${index} is missing [dev-target="accordion-message"]`);
+          return;
+        }
+        accordion.addEventListener("mouseenter", () => {
+          this.goToAccordion(index);
+        });
+        this.accordions.push(accordion);
+      });
+      if (this.accordions.length === 0) {
+        console.error("No valid accordions found after validation");
+        return;
+      }
+      this.activateAccordion(0);
+      this.startAutoCycle();
+    }
+    /**
+     * Activate a specific accordion by index
+     */
+    activateAccordion(index) {
+      this.accordions.forEach((accordion) => {
+        accordion.classList.remove("is-active");
+        const svg2 = accordion.querySelector('[dev-target="accordion-svg"]');
+        if (!svg2) {
+          console.error(`Active accordion at index ${index} is missing [dev-target="accordion-svg"]`);
+          return;
+        }
+        const circles2 = svg2.querySelectorAll("circle");
+        if (!circles2 || circles2.length === 0) {
+          console.error(`Active accordion at index ${index} has no circles in its SVG`);
+          return;
+        }
+        circles2.forEach((circle) => {
+          circle.setAttribute("fill", "#E7E7E7");
+        });
+      });
+      const activeAccordion = this.accordions[index];
+      activeAccordion.classList.add("is-active");
+      const svg = activeAccordion.querySelector('[dev-target="accordion-svg"]');
+      if (!svg) {
+        console.error(`Active accordion at index ${index} is missing [dev-target="accordion-svg"]`);
+        return;
+      }
+      const circles = svg.querySelectorAll("circle");
+      if (!circles || circles.length === 0) {
+        console.error(`Active accordion at index ${index} has no circles in its SVG`);
+        return;
+      }
+      circles.forEach((circle) => {
+        circle.setAttribute("fill", "#3467E5");
+      });
+      this.state.currentIndex = index;
+    }
+    /**
+     * Start automatic cycling through accordion tabs
+     */
+    startAutoCycle() {
+      this.state.intervalId = window.setInterval(() => {
+        const nextIndex = (this.state.currentIndex + 1) % this.accordions.length;
+        this.activateAccordion(nextIndex);
+      }, this.TAB_DURATION);
+    }
+    /**
+     * Stop automatic cycling
+     */
+    stop() {
+      if (this.state.intervalId !== null) {
+        clearInterval(this.state.intervalId);
+        this.state.intervalId = null;
+      }
+    }
+    /**
+     * Manually go to a specific accordion index
+     */
+    goToAccordion(index) {
+      if (index < 0 || index >= this.accordions.length) {
+        console.error(`Invalid accordion index: ${index}`);
+        return;
+      }
+      if (this.state.intervalId !== null) {
+        clearInterval(this.state.intervalId);
+      }
+      this.activateAccordion(index);
+      this.startAutoCycle();
+    }
+    /**
+     * Clean up and destroy the accordion controller
+     */
+    destroy() {
+      this.stop();
+      this.accordions = [];
+      this.state = {
+        currentIndex: 0,
+        intervalId: null
+      };
+    }
+  };
+
+  // src/index.ts
+  window.Webflow ||= [];
+  window.Webflow.push(() => {
+    const accordionController = new AccordionController();
+    accordionController.init();
+  });
+})();
+//# sourceMappingURL=index.js.map

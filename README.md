@@ -1,6 +1,6 @@
-# Automatic Accordion
+# Blog Accordion Component
 
-An automatic accordion component with smooth progress animations that cycles through tabs every 10 seconds.
+An interactive accordion component for blog cards that automatically cycles through items with smooth animations. Features SVG icon state transitions (active/inactive) and hover-based manual control.
 
 ## Reference
 
@@ -26,7 +26,11 @@ An automatic accordion component with smooth progress animations that cycles thr
 
 ## Using the Accordion
 
-The automatic accordion cycles through tabs every 10 seconds with a smooth progress bar animation.
+The blog accordion component automatically cycles through accordion items every 10 seconds. Each item features:
+- Dynamic SVG icon state transitions (blue for active, gray for inactive)
+- Hover interaction to manually select items
+- Automatic cycling that restarts after manual selection
+- Smooth animations and state management
 
 ### HTML Structure
 

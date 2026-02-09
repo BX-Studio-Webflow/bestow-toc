@@ -1,12 +1,11 @@
 /**
  * Automatic accordion animation controller
- * Handles automatic tab cycling with smooth progress bar animations
+ * Handles automatic tab cycling with hover-based activation
  */
 
 interface AccordionState {
   currentIndex: number;
   intervalId: number | null;
-  animationFrameId: number | null;
 }
 
 export class AccordionController {
@@ -14,11 +13,8 @@ export class AccordionController {
   private state: AccordionState = {
     currentIndex: 0,
     intervalId: null,
-    animationFrameId: null,
   };
   private readonly TAB_DURATION = 10000; // 10 seconds in milliseconds
-  private progressStartTime: number = 0;
-
   /**
    * Initialize the accordion controller
    */
@@ -41,8 +37,6 @@ export class AccordionController {
       // Validate required child elements
       const title = accordion.querySelector('[dev-target="accordion-title"]');
       const message = accordion.querySelector('[dev-target="accordion-message"]');
-      const track = accordion.querySelector('[dev-target="accordion-animation-track"]');
-      const fill = accordion.querySelector('[dev-target="accordion-animation-fill"]');
 
       if (!title) {
         console.error(`Accordion at index ${index} is missing [dev-target="accordion-title"]`);
@@ -52,20 +46,9 @@ export class AccordionController {
         console.error(`Accordion at index ${index} is missing [dev-target="accordion-message"]`);
         return;
       }
-      if (!track) {
-        console.error(
-          `Accordion at index ${index} is missing [dev-target="accordion-animation-track"]`
-        );
-        return;
-      }
-      if (!fill) {
-        console.error(
-          `Accordion at index ${index} is missing [dev-target="accordion-animation-fill"]`
-        );
-        return;
-      }
-      //setup click to set active accordion
-      accordion.addEventListener('click', () => {
+
+      // Setup hover to set active accordion
+      accordion.addEventListener('mouseenter', () => {
         this.goToAccordion(index);
       });
       this.accordions.push(accordion);
@@ -89,60 +72,44 @@ export class AccordionController {
   private activateAccordion(index: number): void {
     // Deactivate all accordions
     this.accordions.forEach((accordion) => {
-      const fill = accordion.querySelector(
-        '[dev-target="accordion-animation-fill"]'
-      ) as HTMLElement;
-      if (fill) {
-        fill.style.width = '0%';
-      }
       accordion.classList.remove('is-active');
+      const svg = accordion.querySelector('[dev-target="accordion-svg"]') as SVGSVGElement;
+      if (!svg) {
+        console.error(`Active accordion at index ${index} is missing [dev-target="accordion-svg"]`);
+        return;
+      }
+      const circles = svg.querySelectorAll('circle');
+      if (!circles || circles.length === 0) {
+        console.error(`Active accordion at index ${index} has no circles in its SVG`);
+        return;
+      }
+
+      circles.forEach((circle) => {
+        circle.setAttribute('fill', '#E7E7E7'); // new color
+      });
     });
 
     // Activate the target accordion
     const activeAccordion = this.accordions[index];
     activeAccordion.classList.add('is-active');
 
-    // Update state
-    this.state.currentIndex = index;
-
-    // Start progress animation
-    this.startProgressAnimation();
-  }
-
-  /**
-   * Start the smooth progress bar animation
-   */
-  private startProgressAnimation(): void {
-    // Cancel any existing animation
-    if (this.state.animationFrameId !== null) {
-      cancelAnimationFrame(this.state.animationFrameId);
+    const svg = activeAccordion.querySelector('[dev-target="accordion-svg"]') as SVGSVGElement;
+    if (!svg) {
+      console.error(`Active accordion at index ${index} is missing [dev-target="accordion-svg"]`);
+      return;
+    }
+    const circles = svg.querySelectorAll('circle');
+    if (!circles || circles.length === 0) {
+      console.error(`Active accordion at index ${index} has no circles in its SVG`);
+      return;
     }
 
-    const activeAccordion = this.accordions[this.state.currentIndex];
-    const fill = activeAccordion.querySelector(
-      '[dev-target="accordion-animation-fill"]'
-    ) as HTMLElement;
+    circles.forEach((circle) => {
+      circle.setAttribute('fill', '#3467E5'); // new color
+    });
 
-    if (!fill) return;
-
-    // Record start time
-    this.progressStartTime = performance.now();
-
-    // Animation loop
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - this.progressStartTime;
-      const progress = Math.min(elapsed / this.TAB_DURATION, 1); // 0 to 1
-      const percentage = progress * 100;
-
-      fill.style.width = `${percentage}%`;
-
-      // Continue animation if not complete
-      if (progress < 1) {
-        this.state.animationFrameId = requestAnimationFrame(animate);
-      }
-    };
-
-    this.state.animationFrameId = requestAnimationFrame(animate);
+    // Update state
+    this.state.currentIndex = index;
   }
 
   /**
@@ -162,11 +129,6 @@ export class AccordionController {
     if (this.state.intervalId !== null) {
       clearInterval(this.state.intervalId);
       this.state.intervalId = null;
-    }
-
-    if (this.state.animationFrameId !== null) {
-      cancelAnimationFrame(this.state.animationFrameId);
-      this.state.animationFrameId = null;
     }
   }
 
@@ -197,7 +159,6 @@ export class AccordionController {
     this.state = {
       currentIndex: 0,
       intervalId: null,
-      animationFrameId: null,
     };
   }
 }
