@@ -1,10 +1,7 @@
-import './styles/accordion-animations.css';
-
-import { AccordionController } from '$utils/accordion-animation';
+import { FaqAccordionController } from '$utils/faq-accordion';
 
 window.Webflow ||= [];
 window.Webflow.push(() => {
-  // Initialize automatic accordion
-  const accordionController = new AccordionController();
-  accordionController.init();
+  const faqAccordionController = new FaqAccordionController();
+  faqAccordionController.init();
 });
