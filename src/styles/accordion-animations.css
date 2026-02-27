@@ -4,8 +4,6 @@
 
 [dev-target="faq-tab"] {
   cursor: pointer;
-  opacity: 0.45;
-  transition: opacity 0.2s ease;
 }
 
 /* ACTIVE */
