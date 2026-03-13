@@ -1,8 +1,9 @@
 import './styles/accordion-animations.css';
 
-import { FaqAccordionController } from '$utils/faq-accordion';
+import { FaqTocController } from '$utils/faq-toc';
+
 window.Webflow ||= [];
 window.Webflow.push(() => {
-  const faqAccordionController = new FaqAccordionController();
-  faqAccordionController.init();
+  const faqTocController = new FaqTocController();
+  faqTocController.init();
 });

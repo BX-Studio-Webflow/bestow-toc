@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/styles/accordion-animations.css"],
+  "sourcesContent": ["/* FAQ TOC */\r\n[dev-target-toc] {\r\n  cursor: pointer;\r\n}\r\n\r\n[dev-target-toc].is-active {\r\n  font-weight: 600;\r\n  color: var(--primary, #5e65fb);\r\n}\r\n"],
+  "mappings": ";AACA,CAAC;AACC,UAAQ;AACV;AAEA,CAAC,eAAe,CAAC;AACf,eAAa;AACb,SAAO,IAAI,SAAS,EAAE;AACxB;",
+  "names": []
+}

@@ -1,1 +1,139 @@
-"use strict";(()=>{var s=Object.defineProperty;var d=(r,e,t)=>e in r?s(r,e,{enumerable:!0,configurable:!0,writable:!0,value:t}):r[e]=t;var n=(r,e,t)=>d(r,typeof e!="symbol"?e+"":e,t);var a=class{constructor(){n(this,"tabLinks",[]);n(this,"accordionItems",[])}init(){this.initTabNav(),this.initAccordionItems()}initTabNav(){let e=document.querySelectorAll('[dev-target="faq-tab"]');if(!e.length){console.error('No [dev-target="faq-tab"] elements found');return}e.forEach(t=>{this.tabLinks.push(t),t.addEventListener("click",o=>{o.preventDefault(),this.handleTabClick(t)})})}handleTabClick(e){let t=e.getAttribute("goto");if(!t)return;let o=document.getElementById(t);if(!o){console.error(`No element found with id="${t}"`);return}o.scrollIntoView({behavior:"smooth",block:"start"}),this.tabLinks.forEach(i=>i.classList.remove("is-active")),e.classList.add("is-active")}initAccordionItems(){let e=document.querySelectorAll('[dev-target="faq-item"]');if(!e.length){console.error('No [dev-target="faq-item"] elements found');return}e.forEach(t=>{this.accordionItems.push(t);let o=t.querySelector('[dev-target="faq-header"]');o&&o.addEventListener("click",()=>{this.toggleAccordion(t)})})}toggleAccordion(e){let t=e.classList.contains("is-open"),o=e.closest('[dev-target="faq-group"]');o&&o.querySelectorAll('[dev-target="faq-item"]').forEach(i=>{i.classList.remove("is-open")}),t||e.classList.add("is-open")}destroy(){this.tabLinks=[],this.accordionItems=[]}};window.Webflow||(window.Webflow=[]);window.Webflow.push(()=>{new a().init()});})();
+"use strict";
+(() => {
+  // bin/live-reload.js
+  new EventSource(`${"http://localhost:3000"}/esbuild`).addEventListener("change", () => location.reload());
+
+  // src/utils/faq-toc.ts
+  var ACTIVE_CLASS = "is-active";
+  var SCROLL_OFFSET = 160;
+  var SCROLL_TO_OFFSET_FALLBACK = 100;
+  var TOC_TO_SECTION = {
+    "products-and-services": "product-and-services",
+    "technical-specifications-and-security": "tech-specifications-and-security"
+  };
+  var FaqTocController = class {
+    tocItems = [];
+    sections = [];
+    scrollRaf = null;
+    boundOnScroll = () => this.onScroll();
+    init() {
+      this.collectElements();
+      this.validateMappings();
+      this.initClickHandlers();
+      this.initScrollSpy();
+      this.updateActiveState();
+    }
+    validateMappings() {
+      const sectionIds = new Set(this.sections.map((s) => s.getAttribute("dev-target")));
+      for (const item of this.tocItems) {
+        const tocId = item.getAttribute("dev-target-toc");
+        if (!tocId) continue;
+        const sectionId = TOC_TO_SECTION[tocId] ?? tocId;
+        if (!sectionIds.has(sectionId)) {
+          console.error(
+            `[FaqToc] TOC mismatch: tocId="${tocId}" has no matching section (resolved sectionId="${sectionId}")`
+          );
+        }
+      }
+    }
+    collectElements() {
+      this.tocItems = Array.from(document.querySelectorAll("[dev-target-toc]"));
+      this.sections = Array.from(
+        document.querySelectorAll(".one-group [dev-target]")
+      ).filter(
+        (el) => el.hasAttribute("dev-target") && el.getAttribute("dev-target") !== "one-group"
+      );
+    }
+    initClickHandlers() {
+      this.tocItems.forEach((item) => {
+        item.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.handleTocClick(item);
+        });
+      });
+    }
+    handleTocClick(tocItem) {
+      const tocId = tocItem.getAttribute("dev-target-toc");
+      if (!tocId) return;
+      const sectionId = TOC_TO_SECTION[tocId] ?? tocId;
+      const section = this.sections.find((s) => s.getAttribute("dev-target") === sectionId);
+      if (!section) {
+        console.error(
+          `[FaqToc] TOC mismatch: no section found for tocId="${tocId}" (resolved sectionId="${sectionId}")`
+        );
+        return;
+      }
+      const nav = document.querySelector(".nav_component");
+      const offset = nav ? nav.getBoundingClientRect().height : SCROLL_TO_OFFSET_FALLBACK;
+      const top = window.scrollY + section.getBoundingClientRect().top - offset;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+    initScrollSpy() {
+      window.addEventListener("scroll", this.boundOnScroll, { passive: true });
+    }
+    onScroll() {
+      if (this.scrollRaf != null) return;
+      this.scrollRaf = requestAnimationFrame(() => {
+        this.updateActiveState();
+        this.scrollRaf = null;
+      });
+    }
+    updateActiveState() {
+      const activeSectionId = this.getActiveSectionId();
+      if (!activeSectionId) {
+        this.tocItems.forEach((item) => item.classList.remove(ACTIVE_CLASS));
+        return;
+      }
+      const tocIdForSection = Object.entries(TOC_TO_SECTION).find(([, sectionId]) => sectionId === activeSectionId)?.[0] ?? activeSectionId;
+      this.tocItems.forEach((item) => {
+        const tocId = item.getAttribute("dev-target-toc");
+        if (tocId === tocIdForSection || tocId === activeSectionId) {
+          item.classList.add(ACTIVE_CLASS);
+        } else {
+          item.classList.remove(ACTIVE_CLASS);
+        }
+      });
+    }
+    getActiveSectionId() {
+      const viewportTop = window.scrollY + SCROLL_OFFSET;
+      let activeSection = null;
+      let activeTop = -Infinity;
+      for (const section of this.sections) {
+        const rect = section.getBoundingClientRect();
+        const top = rect.top + window.scrollY;
+        if (top <= viewportTop && top > activeTop) {
+          activeTop = top;
+          activeSection = section;
+        }
+      }
+      if (activeSection) {
+        return activeSection.getAttribute("dev-target");
+      }
+      if (this.sections.length) {
+        const first = this.sections[0];
+        const rect = first.getBoundingClientRect();
+        if (rect.top > 0) {
+          return first.getAttribute("dev-target");
+        }
+      }
+      return null;
+    }
+    destroy() {
+      window.removeEventListener("scroll", this.boundOnScroll);
+      if (this.scrollRaf != null) {
+        cancelAnimationFrame(this.scrollRaf);
+      }
+      this.tocItems.forEach((item) => item.classList.remove(ACTIVE_CLASS));
+      this.tocItems = [];
+      this.sections = [];
+    }
+  };
+
+  // src/index.ts
+  window.Webflow ||= [];
+  window.Webflow.push(() => {
+    const faqTocController = new FaqTocController();
+    faqTocController.init();
+  });
+})();
+//# sourceMappingURL=index.js.map
