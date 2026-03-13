@@ -1,12 +1,13 @@
-# Blog Accordion Component
+# Bestow FAQ TOC
 
-An interactive accordion component for blog cards that automatically cycles through items with smooth animations. Features SVG icon state transitions (active/inactive) and hover-based manual control.
+FAQ table-of-contents component with scroll-spy and click-to-scroll. Highlights the active section as the user scrolls and scrolls to sections when TOC items are clicked, with nav-aware offset so headings stay visible.
 
 ## Reference
 
-- [Using the Accordion](#using-the-accordion)
+- [Using the FAQ TOC](#using-the-faq-toc)
   - [HTML Structure](#html-structure)
   - [Required Attributes](#required-attributes)
+  - [TOC-to-Section Mapping](#toc-to-section-mapping)
   - [Integration](#integration)
   - [Customization](#customization)
 - [Included tools](#included-tools)
@@ -24,129 +25,94 @@ An interactive accordion component for blog cards that automatically cycles thro
   - [Continuous Deployment](#continuous-deployment)
   - [How to automatically deploy updates to npm](#how-to-automatically-deploy-updates-to-npm)
 
-## Using the Accordion
+## Using the FAQ TOC
 
-The blog accordion component automatically cycles through accordion items every 10 seconds. Each item features:
+The FAQ TOC component provides:
 
-- Dynamic SVG icon state transitions (blue for active, gray for inactive)
-- Hover interaction to manually select items
-- Automatic cycling that restarts after manual selection
-- Smooth animations and state management
+- **Scroll-spy** — Highlights the TOC item whose section is in view as the user scrolls
+- **Click-to-scroll** — Clicking a TOC item scrolls to the matching section with smooth behavior
+- **Nav-aware offset** — Uses the nav height (`.nav_component`) so section headings stay visible below fixed headers
 
 ### HTML Structure
 
-Each accordion item requires the following structure:
+**TOC items** (e.g. in `.faq-toc-list`):
 
 ```html
-<div dev-target="accordion" class="blog-accordion_card">
-  <div dev-target="accordion-svg" class="blog-accordion_logo w-embed">
-    <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34" fill="none">
-      <circle cx="4.08" cy="4.08" r="4.08" fill="#3467E5"></circle>
-      <circle cx="16.9999" cy="4.08" r="4.08" fill="#3467E5"></circle>
-      <circle cx="29.9203" cy="4.08" r="4.08" fill="#3467E5"></circle>
-      <circle cx="4.08" cy="16.9999" r="4.08" fill="#3467E5"></circle>
-      <circle cx="16.9999" cy="16.9999" r="4.08" fill="#3467E5"></circle>
-      <circle cx="29.9203" cy="16.9999" r="4.08" fill="#3467E5"></circle>
-      <circle cx="4.08" cy="29.9198" r="4.08" fill="#3467E5"></circle>
-      <circle cx="16.9999" cy="29.9198" r="4.08" fill="#3467E5"></circle>
-      <circle cx="29.9203" cy="29.9198" r="4.08" fill="#3467E5"></circle>
-    </svg>
-  </div>
-  <div class="blog-accordion-body">
-    <div class="blog-accordion-header">
-      <div dev-target="accordion-title" class="blog-accordion-title">Technical Excellence</div>
-      <div dev-target="accordion-arrow" class="blog-accordion_arrow w-embed">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="11"
-          viewBox="0 0 20 11"
-          fill="none"
-        >
-          <path d="M0.353516 0.353516L9.85352 9.85352L19.3535 0.353516" stroke="#020C2E"></path>
-        </svg>
-      </div>
-    </div>
-    <div dev-target="accordion-message" class="blog-accordion-text">
-      Hand off a Figma design and we'll build it on Webflow via a white-glove process.
-    </div>
-  </div>
+<div dev-target-toc="general-overview" class="faq-toc">
+  <h5 class="faq-toc_text">General Overview</h5>
+</div>
+<div dev-target-toc="products-and-services" class="faq-toc">
+  <h5 class="faq-toc_text">Products and Services</h5>
+</div>
+```
+
+**Section headings** (inside `.one-group`):
+
+```html
+<div class="one-group">
+  <h4 dev-target="general-overview" class="group-heading">General Overview</h4>
+  <!-- FAQ content -->
+</div>
+<div class="one-group">
+  <h4 dev-target="product-and-services" class="group-heading">Products and Services</h4>
+  <!-- FAQ content -->
 </div>
 ```
 
 ### Required Attributes
 
-All accordion items **must** include these `dev-target` attributes:
+- `dev-target-toc="section-id"` — On TOC links; value should match the target section’s `dev-target`
+- `dev-target="section-id"` — On section headings (e.g. `h4.group-heading`) inside `.one-group`; exclude `dev-target="one-group"` on the wrapper
 
-- `dev-target="accordion"` - Main accordion card container
-- `dev-target="accordion-svg"` - SVG icon container (circles will transition between #3467E5 for active and #E7E7E7 for inactive)
-- `dev-target="accordion-title"` - Accordion title element
-- `dev-target="accordion-message"` - Accordion content/description text
+The component will:
 
-The component will automatically:
+- Add/remove `is-active` on the TOC item whose section is in view
+- Scroll to the section on TOC click, offset by the nav height
+- Log `console.error` if a TOC item has no matching section
 
-- Change SVG circle colors based on active state
-- Add/remove the `is-active` class on the accordion container
-- Cycle through items every 10 seconds
-- Reset cycling when a user hovers over an item
+### TOC-to-Section Mapping
 
-⚠️ **Important:** The accordion will fail gracefully and log errors if any required attributes are missing.
+When TOC and section IDs differ in the markup, add a mapping in `src/utils/faq-toc.ts`:
+
+```typescript
+const TOC_TO_SECTION: Record<string, string> = {
+  'products-and-services': 'product-and-services',
+  'technical-specifications-and-security': 'tech-specifications-and-security',
+};
+```
 
 ### Integration
 
-1. **Add the script to your Webflow page:**
+1. **Add the script and CSS** to your Webflow page:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/YOUR-USERNAME/bx-blog-accordion@v0.0.1/dist/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/YOUR-USERNAME/bestow-toc@v0.0.1/dist/index.css" />
+<script src="https://cdn.jsdelivr.net/gh/YOUR-USERNAME/bestow-toc@v0.0.1/dist/index.js"></script>
 ```
 
-2. **Add multiple accordion items** with the structure shown above
+2. **Ensure the page has:**
+   - TOC items with `dev-target-toc`
+   - Section headings with `dev-target` inside `.one-group`
+   - A nav with class `.nav_component` for scroll offset (or adjust the selector in `handleTocClick`)
 
-3. **The accordion will automatically:**
-   - Activate the first accordion on page load
-   - Change SVG icon colors (blue #3467E5 for active, gray #E7E7E7 for inactive)
-   - Automatically cycle to the next accordion every 10 seconds
-   - Allow manual selection via hover (cycling restarts after hover)
-   - Loop back to the first accordion after the last one
+3. **Initialization** — The controller initializes automatically inside `window.Webflow.push()`.
 
 ### Customization
 
-**Timing:**
-To change the accordion cycle duration, modify `TAB_DURATION` in `src/utils/accordion-animation.ts`:
+**Scroll offset (scroll-spy):**  
+Adjust `SCROLL_OFFSET` in `src/utils/faq-toc.ts` (px from top for “active” detection).
 
-```typescript
-private readonly TAB_DURATION = 10000; // milliseconds (10 seconds)
-```
+**Scroll-to fallback:**  
+If the nav isn’t found, `SCROLL_TO_OFFSET_FALLBACK` is used. Change it in `src/utils/faq-toc.ts`.
 
-**SVG Colors:**
-The component automatically transitions SVG circle colors:
+**Nav selector:**  
+The scroll offset uses `.nav_component`. Update the selector in `handleTocClick` if your nav uses different markup.
 
-- **Active state:** `#3467E5` (blue)
-- **Inactive state:** `#E7E7E7` (gray)
+**Styling:**  
+See `src/styles/accordion-animations.css`:
 
-To customize these colors, update the color values in the `activateAccordion` method in `src/utils/accordion-animation.ts`.
-
-**Styling:**
-Customize the appearance by updating your Webflow styles or add custom CSS:
-
-- `.blog-accordion_card` - Accordion card container
-- `.blog-accordion_card.is-active` - Active accordion state
-- `.blog-accordion-title` - Title styling
-- `.blog-accordion-text` - Message text styling
-
-**Manual Control:**
-Access the accordion controller to manually control behavior:
-
-```javascript
-// Stop auto-cycling
-accordionController.stop();
-
-// Go to specific accordion (0-indexed)
-accordionController.goToAccordion(2);
-
-// Destroy the accordion
-accordionController.destroy();
-```
+- `[dev-target-toc]` — TOC item base styles (e.g. `cursor: pointer`)
+- `[dev-target-toc].is-active` — Active TOC item (e.g. font-weight, color)
 
 ## Included tools
 
@@ -357,6 +323,7 @@ To create and publish a new version:
 
 4. **Update Webflow script tag** - Use the new version in your Webflow project
    ```html
-   <script src="https://cdn.jsdelivr.net/gh/YOUR-USERNAME/bx-blog-accordion@v0.0.1/dist/index.js"></script>
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/YOUR-USERNAME/bestow-toc@v0.0.1/dist/index.css" />
+   <script src="https://cdn.jsdelivr.net/gh/YOUR-USERNAME/bestow-toc@v0.0.1/dist/index.js"></script>
    ```
    Update the version number in the `@v0.0.1` part of the URL to match your release
