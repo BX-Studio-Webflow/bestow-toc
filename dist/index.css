@@ -1,9 +1,1 @@
-/* src/styles/accordion-animations.css */
-[dev-target-toc] {
-  cursor: pointer;
-}
-[dev-target-toc].is-active {
-  font-weight: 600;
-  color: var(--primary, #5e65fb);
-}
-/*# sourceMappingURL=index.css.map */
+[dev-target-toc]{cursor:pointer}[dev-target-toc].is-active{font-weight:600;color:var(--primary, #5e65fb)}
